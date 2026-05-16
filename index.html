@@ -193,6 +193,68 @@ body.locked .header,body.locked .container{filter:blur(2px);pointer-events:none;
   .chart.lg{height:300px;}
 }
 
+
+
+/* v36 mobile layout refinement */
+@media(max-width:680px){
+  .filter-box{
+    display:grid !important;
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    gap:8px !important;
+    align-items:end !important;
+  }
+  .filter-box .fi:nth-child(1),
+  .filter-box .fi:nth-child(2){
+    grid-column:span 2;
+  }
+  .filter-box .fi:nth-child(3){
+    grid-column:1 / -1;
+  }
+  .filter-box .btn{
+    grid-column:span 1;
+    width:100%;
+    min-width:0;
+    padding:10px 4px;
+    font-size:11.5px;
+    line-height:1.15;
+    white-space:nowrap;
+  }
+  .filter-box .fi label{font-size:10.5px;}
+  .filter-box .fi input,
+  .filter-box .fi select{
+    height:40px;
+    padding:9px 8px;
+    font-size:13px;
+  }
+  .metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+  .metric{
+    min-height:82px !important;
+    padding:10px !important;
+  }
+  .metric-label{
+    font-size:10.5px !important;
+    margin-bottom:5px !important;
+  }
+  .metric-value{
+    font-size:18px !important;
+    line-height:1.15 !important;
+    letter-spacing:-.4px;
+  }
+  .metric-sub{
+    font-size:10px !important;
+    margin-top:5px !important;
+    line-height:1.25 !important;
+  }
+}
+
+@media(max-width:380px){
+  .filter-box .btn{font-size:10.5px;padding:9px 2px;}
+  .metric-value{font-size:17px !important;}
+}
+
 </style>
 </head>
 <body class="locked">
@@ -215,7 +277,7 @@ body.locked .header,body.locked .container{filter:blur(2px);pointer-events:none;
     <div class="fi"><label>회사</label><select id="company"><option value="neo">네오디스</option><option value="mak">맥필드스토어</option><option value="both">네오디스+맥필드</option></select></div>
     <button class="btn" onclick="refresh()">분석 새로고침</button>
     <button class="btn secondary" onclick="setThisMonth();refresh();">이번 달</button>
-    <button class="btn secondary" onclick="setThisWeek();refresh();">이번 주</button>
+    <button class="btn secondary" onclick="setLastWeek();refresh();">저번주</button>
     <button class="btn secondary" onclick="setToday();refresh();">오늘</button>
   </div>
   <div class="status" id="status">데이터 로딩 중...</div>
@@ -402,6 +464,21 @@ function setThisWeek(){
   const start=new Date(today.getFullYear(), today.getMonth(), today.getDate());
   start.setDate(start.getDate()-start.getDay()); // 일요일
   const end=new Date(start.getFullYear(), start.getMonth(), start.getDate()+6); // 토요일
+
+  document.getElementById('start').value=toYmd(start);
+  document.getElementById('end').value=toYmd(end);
+}
+
+
+function setLastWeek(){
+  const pad=n=>String(n).padStart(2,'0');
+  const toYmd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+
+  const today=new Date();
+  const thisWeekStart=new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  thisWeekStart.setDate(thisWeekStart.getDate()-thisWeekStart.getDay()); // 이번주 일요일
+  const start=new Date(thisWeekStart.getFullYear(), thisWeekStart.getMonth(), thisWeekStart.getDate()-7);
+  const end=new Date(start.getFullYear(), start.getMonth(), start.getDate()+6);
 
   document.getElementById('start').value=toYmd(start);
   document.getElementById('end').value=toYmd(end);
@@ -1422,7 +1499,7 @@ function switchTab(name,el){document.querySelectorAll('.tab').forEach(t=>t.class
 
 // ===== Simple password gate =====
 // GitHub Pages 정적 HTML용 간단 잠금입니다. 강한 보안이 필요한 경우 Cloudflare Access/Netlify Password 등을 사용하세요.
-const DASHBOARD_PASSWORD = 'heyyes';
+const DASHBOARD_PASSWORD = '1234';
 
 function unlockDashboard(){
   const login=document.getElementById('loginScreen');
