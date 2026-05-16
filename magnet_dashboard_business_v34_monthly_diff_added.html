@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>네이버 자석 쇼핑몰 통합 대시보드</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--blue:#1a73e8;--green:#188038;--red:#d93025;--amber:#f9ab00;--ink:#202124;--muted:#5f6368;--line:#e8eaed;--bg:#f6f8fb;--card:#fff;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;background:var(--bg);font-size:14px;color:var(--ink);}
+.header{background:linear-gradient(135deg,#174ea6,#1a73e8);color:white;padding:18px 24px;box-shadow:0 2px 8px rgba(0,0,0,.12);}
+.header-inner{max-width:1480px;margin:0 auto;display:flex;justify-content:space-between;gap:18px;align-items:flex-end;}
+.header h1{font-size:22px;line-height:1.25;font-weight:800;}
+.header p{font-size:12px;opacity:.85;margin-top:5px;}
+.container{max-width:1480px;margin:0 auto;padding:18px;}
+.filter-box{background:white;padding:14px 16px;border-radius:14px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;border:1px solid var(--line);box-shadow:0 1px 3px rgba(60,64,67,.08);}
+.fi{display:flex;flex-direction:column;gap:5px;}
+.fi label{font-size:11px;color:var(--muted);font-weight:700;}
+.fi input,.fi select{padding:9px 11px;border:1px solid #dadce0;border-radius:9px;font-size:13px;background:white;min-width:130px;}
+.btn{padding:10px 16px;background:var(--blue);color:white;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:700;}
+.btn.secondary{background:#eef3fe;color:#174ea6;border:1px solid #d2e3fc;}
+.btn:hover{filter:brightness(.96);}
+.status{font-size:18px;color:var(--ink);margin:0 0 16px 2px;font-weight:800;letter-spacing:-.2px;}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow:auto;}
+.tab{padding:12px 16px;cursor:pointer;border:none;background:transparent;color:var(--muted);border-bottom:3px solid transparent;font-size:13px;font-weight:700;white-space:nowrap;}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+.panel{display:none;}.panel.active{display:block;}
+.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px;}
+.metric{background:white;padding:15px;border-radius:14px;border:1px solid var(--line);box-shadow:0 1px 3px rgba(60,64,67,.08);min-height:104px;}
+.metric-label{font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:700;}
+.metric-value{font-size:25px;font-weight:800;color:var(--ink);letter-spacing:-.5px;}
+.metric-sub{font-size:11px;color:#80868b;margin-top:7px;line-height:1.35;}
+.metric.blue{border-top:4px solid var(--blue);} .metric.green{border-top:4px solid var(--green);} .metric.red{border-top:4px solid var(--red);} .metric.amber{border-top:4px solid var(--amber);} .metric.gray{border-top:4px solid #9aa0a6;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.row3{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin-bottom:14px;}
+.chart-box,.table-box,.insight-box{background:white;padding:18px;border-radius:14px;border:1px solid var(--line);box-shadow:0 1px 3px rgba(60,64,67,.08);}
+.box-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;}
+.chart-title{font-size:14px;font-weight:800;color:#333;}
+.hint{font-size:11px;color:#80868b;}
+.chart{position:relative;height:310px;}.chart.sm{height:250px;}.chart.lg{height:360px;}
+table{width:100%;border-collapse:collapse;font-size:12px;} th,td{padding:9px 8px;border-bottom:1px solid #f1f3f4;text-align:right;white-space:nowrap;} th{background:#f8fafd;color:#5f6368;font-weight:800;} td:first-child,th:first-child{text-align:left;}
+.badge{display:inline-block;padding:3px 7px;border-radius:999px;font-size:11px;font-weight:800;background:#eef3fe;color:#174ea6;}
+.insights{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}.insight-box{padding:15px;}.insight-title{font-weight:800;margin-bottom:7px;font-size:13px;}.insight-text{font-size:12px;color:#5f6368;line-height:1.45;}
+@media(max-width:1100px){.metrics{grid-template-columns:repeat(3,1fr)}.row2,.row3,.insights{grid-template-columns:1fr}.header-inner{display:block}.chart{height:280px}}
+@media(max-width:680px){.container{padding:12px}.metrics{grid-template-columns:1fr 1fr}.metric-value{font-size:21px}.fi input,.fi select{min-width:100%}.filter-box{display:grid;grid-template-columns:1fr 1fr}.btn{width:100%}}
+.dow-hour-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px;}
+.dow-hour-grid .chart{height:220px;}
+@media(max-width:900px){.dow-hour-grid{grid-template-columns:1fr;}}
+
+
+.bad-row{background:#fdecec !important;}
+.weak-row{background:#fff4e5 !important;}
+.good-row{background:#ecf7ed !important;}
+.judgement-guide{
+  margin-top:10px;
+  padding:12px 14px;
+  border-radius:10px;
+  background:#f8f9fa;
+  border:1px solid #e8eaed;
+  font-size:12px;
+  line-height:1.7;
+}
+
+
+.comp-row-a{background:#e8f0fe !important;font-weight:800;}
+.comp-row-b{background:#f1f6ff !important;}
+.comp-row-c{background:#fff !important;}
+.comp-group-table{margin-top:16px;}
+.comp-group-table h4{font-size:14px;margin:8px 0 8px;font-weight:800;color:#202124;}
+
+
+.competitor-chart-tall{height:420px;}
+.group-chart{height:300px;margin-bottom:12px;}
+.wide-table-wrap{overflow-x:auto;}
+.wide-table-wrap table{min-width:1100px;}
+
+
+/* competitor clean rebuild */
+.comp-select-box{margin:12px 0 16px;padding:12px;border:1px solid #e8eaed;border-radius:12px;background:#fff;}
+.comp-checks{display:flex;gap:8px;flex-wrap:wrap;}
+.comp-checks label{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid #dadce0;border-radius:999px;background:#fff;font-size:12px;cursor:pointer;line-height:1;}
+.comp-checks label.grp-a{background:#e8f0fe;font-weight:800;}
+.comp-checks label.grp-b{background:#f1f6ff;}
+.comp-checks label.grp-c{background:#fff;}
+.comp-fit-table{width:100%;max-width:100%;overflow:hidden;margin-top:8px;}
+.comp-fit-table table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;}
+.comp-fit-table th,.comp-fit-table td{padding:6px 4px;text-align:right;white-space:normal;word-break:keep-all;border-bottom:1px solid #eef0f2;vertical-align:middle;}
+.comp-fit-table th{background:#f1f3f4;font-weight:800;}
+.comp-fit-table th:first-child,.comp-fit-table td:first-child{text-align:left;width:54px;}
+.comp-fit-table th:nth-child(2),.comp-fit-table td:nth-child(2){width:72px;}
+.comp-fit-table th:nth-child(3),.comp-fit-table td:nth-child(3){width:72px;}
+.comp-fit-table th:nth-child(n+4),.comp-fit-table td:nth-child(n+4){width:auto;}
+.comp-daily-section{margin-top:24px;}
+.notice-box{background:#eef3fe;border:1px solid #d2e3fc;color:#174ea6;border-radius:12px;padding:12px 14px;font-size:13px;font-weight:800;margin-bottom:14px;}
+.diff-up{color:#d93025;font-weight:900;}
+.diff-down{color:#1a73e8;font-weight:900;}
+.diff-flat{color:#5f6368;font-weight:800;}
+
+</style>
+</head>
+<body>
+<div class="header"><div class="header-inner"><div><h1>네이버 자석 쇼핑몰 통합 대시보드</h1><p>종합현황 · 방문추이 · 방문/주문현황 · 월별추이 · 상품성과 · 고객현황</p></div><div class="hint" id="headerRange">-</div></div></div>
+<div class="container">
+  <div class="filter-box">
+    <div class="fi"><label>시작일</label><input type="date" id="start"></div>
+    <div class="fi"><label>종료일</label><input type="date" id="end"></div>
+    <div class="fi"><label>회사</label><select id="company"><option value="neo">네오디스</option><option value="mak">맥필드스토어</option><option value="both">네오디스+맥필드</option></select></div>
+    <button class="btn" onclick="refresh()">분석 새로고침</button>
+    <button class="btn secondary" onclick="setThisMonth();refresh();">이번 달</button>
+    <button class="btn secondary" onclick="setThisWeek();refresh();">이번 주</button>
+    <button class="btn secondary" onclick="setToday();refresh();">오늘</button>
+  </div>
+  <div class="status" id="status">데이터 로딩 중...</div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('monthly',this)">종합현황</button>
+    <button class="tab" onclick="switchTab('competitor',this)">방문추이</button>
+    <button class="tab" onclick="switchTab('conversion',this)">방문/주문현황</button>
+    <button class="tab" onclick="switchTab('history',this)">월별추이</button>
+    <button class="tab" onclick="switchTab('product',this)">상품성과</button>
+    <button class="tab" onclick="switchTab('customer',this)">고객현황</button>
+  </div>
+  <div id="monthly" class="panel active">
+    <div class="metrics">
+      <div class="metric blue"><div class="metric-label">방문자 누적</div><div class="metric-value" id="kVisit">-</div><div class="metric-sub" id="kVisitSub">-</div></div>
+      <div class="metric red"><div class="metric-label">관심고객</div><div class="metric-value" id="kInterest">-</div><div class="metric-sub" id="kInterestSub">-</div></div>
+      <div class="metric green"><div class="metric-label">주문건수</div><div class="metric-value" id="kOrders">-</div><div class="metric-sub" id="kOrdersSub">-</div></div>
+      <div class="metric amber"><div class="metric-label">정산예정금액</div><div class="metric-value" id="kRevenue">-</div><div class="metric-sub" id="kRevenueSub">-</div></div>
+      <div class="metric blue"><div class="metric-label">방문→주문 전환율</div><div class="metric-value" id="kConv">-</div><div class="metric-sub">주문건수 ÷ 방문자수</div></div>
+      <div class="metric gray"><div class="metric-label">객단가</div><div class="metric-value" id="kAov">-</div><div class="metric-sub">정산액 ÷ 주문건수</div></div>
+    </div>
+    <div class="insights">
+      <div class="insight-box"><div class="insight-title">오늘 볼 것</div><div class="insight-text" id="insightToday">-</div></div>
+      <div class="insight-box"><div class="insight-title">월말 예상</div><div class="insight-text" id="insightForecast">-</div></div>
+      <div class="insight-box"><div class="insight-title">조치 후보</div><div class="insight-text" id="insightAction">-</div></div>
+    </div>
+    <div class="chart-box" style="margin-bottom:16px;"><div class="box-head"><div class="chart-title">일별 방문자 · 주문 · 매출 추이</div><div class="hint">방문자/매출은 좌측, 주문건수는 우측 축</div></div><div class="chart lg"><canvas id="monthlyTrendChart"></canvas></div></div>
+    <div class="chart-box" style="margin-bottom:16px;"><div class="box-head"><div class="chart-title">비교기간 일별 방문자 · 주문 · 매출 추이</div><div class="hint" id="prevMonthHint">선택 기간과 같은 일수 기준 / 방문자·매출은 좌측, 주문건수는 우측 축</div></div><div class="chart lg"><canvas id="prevMonthTrendChart"></canvas></div></div>
+    <div class="chart-box" style="margin-bottom:16px;"><div class="box-head"><div class="chart-title">월말 예상 달성판</div><div class="hint">단순 일평균 기준</div></div><div class="chart"><canvas id="forecastChart"></canvas></div></div>
+  </div>
+  <div id="conversion" class="panel">
+    <div class="row2"><div class="chart-box"><div class="chart-title">시간대별 방문자 · 주문건수 · 매출액</div><div class="hint">방문자는 좌측, 주문건수는 우측 축</div><div class="chart"><canvas id="hourCompareChart"></canvas></div></div><div class="chart-box"><div class="chart-title">요일별 전환율 · 매출액</div><div class="hint">전환율은 막대, 매출액은 라인</div><div class="chart"><canvas id="dowConvChart"></canvas></div></div></div>
+    <div class="chart-box" style="margin-bottom:16px;"><div class="box-head"><div class="chart-title">요일별 시간대 방문자 · 주문건수 · 매출액</div><div class="hint">선택 기간 기준, 일요일부터 토요일까지 각각 표시</div></div>
+      <div class="dow-hour-grid">
+        <div class="chart-box"><div class="chart-title">일요일</div><div class="chart"><canvas id="dowHourChart0"></canvas></div></div>
+        <div class="chart-box"><div class="chart-title">월요일</div><div class="chart"><canvas id="dowHourChart1"></canvas></div></div>
+        <div class="chart-box"><div class="chart-title">화요일</div><div class="chart"><canvas id="dowHourChart2"></canvas></div></div>
+        <div class="chart-box"><div class="chart-title">수요일</div><div class="chart"><canvas id="dowHourChart3"></canvas></div></div>
+        <div class="chart-box"><div class="chart-title">목요일</div><div class="chart"><canvas id="dowHourChart4"></canvas></div></div>
+        <div class="chart-box"><div class="chart-title">금요일</div><div class="chart"><canvas id="dowHourChart5"></canvas></div></div>
+        <div class="chart-box"><div class="chart-title">토요일</div><div class="chart"><canvas id="dowHourChart6"></canvas></div></div>
+      </div>
+    </div>
+    <div class="table-box"><div class="box-head"><div class="chart-title">시간대별 전환 현황</div><div class="hint">00시~23시 전체 시간대 기준</div></div>
+<table id="weakHourTable"></table>
+<div class="judgement-guide">
+<b>판단 기준</b><br>
+- 방문자 10명 미만 : 표본 적음<br>
+- 방문 많음 + 주문 0건 : 문제 시간대<br>
+- 전환율 0~0.5% : 매우 약함<br>
+- 전환율 0.5~1.0% : 약함<br>
+- 전환율 1.0~2.0% : 보통<br>
+- 전환율 2.0% 이상 : 강함
+</div>
+</div>
+  </div>
+  <div id="competitor" class="panel">
+    <div class="row2">
+      <div class="chart-box">
+        <div class="chart-title">경쟁사 TOP15 방문자 비교</div>
+        <div class="hint">막대 위 숫자는 일평균 방문자 / 회사명 전체 표시</div>
+        <div class="chart competitor-chart-tall"><canvas id="compVisitChart"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">경쟁사 TOP15 관심고객 비교</div>
+        <div class="hint">관심고객 현재값 + 기간 증가수 / 회사명 전체 표시</div>
+        <div class="chart competitor-chart-tall"><canvas id="compInterestChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-box">
+      <div class="box-head">
+        <div class="chart-title">경쟁사 순위표</div>
+        <div class="hint">전체 스토어 / 기간 내 평균 방문자 기준 / A. 주관리회사 진한색, B. 비교군 옅은색</div>
+      </div>
+      <table id="competitorTable"></table>
+    </div>
+
+    <div class="table-box comp-group-table">
+      <div class="box-head">
+        <div class="chart-title">회사 선택 시간대별 방문자 누적평균</div>
+        <div class="hint">체크한 회사만 표시 / 그래프는 All Average + 선택회사 / 표는 All Average, All Total 포함</div>
+      </div>
+
+      <div class="comp-select-box">
+        <div id="competitorStoreChecks" class="comp-checks"></div>
+      </div>
+
+      <div class="chart group-chart" style="height:320px;">
+        <canvas id="selectedStoreHourChart"></canvas>
+      </div>
+      <div class="comp-fit-table">
+        <table id="selectedStoreHourTable"></table>
+      </div>
+
+      <div class="comp-daily-section">
+        <div class="box-head">
+          <div class="chart-title">선택 회사 일별 방문자 추이</div>
+          <div class="hint">선택 기간 내 일별 방문자수 / 체크 변경 시 자동 갱신</div>
+        </div>
+        <div class="chart group-chart" style="height:320px;">
+          <canvas id="selectedStoreDailyChart"></canvas>
+        </div>
+        <div class="comp-fit-table">
+          <table id="selectedStoreDailyTable"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="history" class="panel">
+    <div class="notice-box">데이터 기준: 올해 1월부터 현재까지 자동 집계합니다. 상단 시작일/종료일 필터와 관계없이 표시됩니다.</div>
+    <div class="chart-box" style="margin-bottom:16px;">
+      <div class="box-head">
+        <div class="chart-title">월별 방문자 · 주문 · 매출 추이</div>
+        <div class="hint">1월부터 오늘까지 자동 집계</div>
+      </div>
+      <div class="chart lg"><canvas id="monthlyCompareChart"></canvas></div>
+    </div>
+
+    <div class="row2">
+      <div class="chart-box">
+        <div class="chart-title">월별 전환율 추이</div>
+        <div class="chart lg"><canvas id="monthlyConvChart"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">월별 객단가 추이</div>
+        <div class="chart lg"><canvas id="monthlyAovChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-box">
+      <div class="box-head">
+        <div class="chart-title">월별 비교표</div>
+        <div class="hint">방문자 / 주문 / 매출 / 전환율 / 객단가</div>
+      </div>
+      <table id="monthlyCompareTable"></table>
+    </div>
+  </div>
+  <div id="product" class="panel">
+    <div class="metrics">
+      <div class="metric blue"><div class="metric-label">총 주문건수</div><div class="metric-value" id="prodTotalOrders">-</div></div>
+      <div class="metric green"><div class="metric-label">총 판매수량</div><div class="metric-value" id="prodTotalQty">-</div></div>
+      <div class="metric amber"><div class="metric-label">총 매출</div><div class="metric-value" id="prodTotalRev">-</div></div>
+      <div class="metric red"><div class="metric-label">주문건 객단가</div><div class="metric-value" id="prodAovOrder">-</div></div>
+      <div class="metric gray"><div class="metric-label">수량당 평균판매가</div><div class="metric-value" id="prodAovQty">-</div></div>
+    </div>
+
+    <div class="row2">
+      <div class="chart-box"><div class="chart-title">카테고리대별 매출건수 비중</div><div class="chart lg"><canvas id="categoryOrderPieChart"></canvas></div></div>
+      <div class="chart-box"><div class="chart-title">카테고리대별 매출액 비중</div><div class="chart lg"><canvas id="categoryRevenuePieChart"></canvas></div></div>
+    </div>
+
+    <div class="table-box">
+      <div class="box-head"><div class="chart-title">카테고리별 분석표</div><div class="hint">카테고리대 / 중 / 소 기준, Subtotal + Total 포함</div></div>
+      <div style="overflow-x:auto;"><table id="categoryAnalysisTable"></table></div>
+    </div>
+  </div>
+  <div id="customer" class="panel">
+    <div class="table-box"><div class="box-head"><div class="chart-title">충성고객 후보</div><div class="hint">구매자명/구매자ID/수취인 컬럼이 있을 때 표시</div></div><table id="customerTable"></table></div>
+  </div>
+</div>
+<script>
+const SHEET_VISIT = '16amNelj6fvy4imsJDN8hDWwaQ7Dqg7jvfksrDHL6kgI';
+const SHEET_SALES = '18c14-81OIyTkA134TqGXHpaSvexg_m8O67IDkECpcIQ';
+const DOW = ['일','월','화','수','목','금','토'];
+let charts = {};
+let rawVisit = [], rawSales = [], rawPriceMap = [];
+function gvizJsonp(baseUrl){return new Promise((resolve,reject)=>{const cb='__gviz_cb_'+Date.now()+'_'+Math.random().toString(36).slice(2);const script=document.createElement('script');let done=false;const timer=setTimeout(()=>{if(done)return;cleanup();reject(new Error('응답 시간 초과'));},20000);function cleanup(){done=true;clearTimeout(timer);try{delete window[cb];}catch(e){window[cb]=undefined;}if(script.parentNode)script.parentNode.removeChild(script);}window[cb]=function(j){cleanup();resolve(j);};script.onerror=function(){cleanup();reject(new Error('스크립트 로드 실패'));};const sep=baseUrl.includes('?')?'&':'?';script.src=baseUrl+sep+'tqx='+encodeURIComponent('out:json;responseHandler:'+cb)+'&headers=1&rand='+Date.now();document.head.appendChild(script);});}
+function formatCell(cell){if(!cell)return null;if(cell.v instanceof Date)return cell.v;if(typeof cell.v==='string'&&/^Date\(/.test(cell.v))return cell.v;if(typeof cell.v==='number')return cell.v;if(cell.f!==undefined&&cell.f!==null&&cell.f!=='')return cell.f;return cell.v??null;}
+function parseGvizResult(j,label){if(!j)throw new Error(label+' 응답 없음');if(j.status==='error'){const msg=(j.errors||[]).map(e=>e.detailed_message||e.message||e.reason).filter(Boolean).join(' / ');throw new Error(label+' 로드 실패: '+(msg||'Google 응답 오류'));}const cols=(j.table?.cols||[]).map((c,i)=>String(c.label||c.id||'col'+i).trim());const rows=(j.table?.rows||[]).map(row=>{const obj={};(row.c||[]).forEach((cell,i)=>{obj[cols[i]]=formatCell(cell);obj[cols[i]+'__rawv']=cell?(cell.v??null):null;});return obj;}).filter(row=>Object.values(row).some(v=>v!==null&&v!==''));if(!rows.length)throw new Error(label+' 시트가 비어있음');return rows;}
+async function fetchSheet(sheetId,sheetName){const url=`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=${encodeURIComponent(sheetName)}`;return parseGvizResult(await gvizJsonp(url),sheetName);}
+function num(v){if(v===null||v===undefined||v==='')return 0;if(typeof v==='number')return v;const n=Number(String(v).replace(/,/g,'').trim());return Number.isFinite(n)?n:0;}
+function parseDate(s){if(!s)return null;if(s instanceof Date)return s;if(typeof s==='number'){const base=new Date(1899,11,30);const days=Math.floor(s);const frac=s-days;const d=new Date(base);d.setDate(d.getDate()+days);const totalSecs=Math.round(frac*86400);d.setHours(Math.floor(totalSecs/3600),Math.floor((totalSecs%3600)/60),totalSecs%60,0);return d;}const str=String(s).trim();let m=str.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);if(m)return new Date(+m[1],+m[2],+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0));m=str.match(/(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);if(m)return new Date(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0));m=str.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);return null;}
+function ymd(d){if(!d)return '';return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function parseOrderDatetime(r){const v=r['주문일시'];if(!v)return null;if(v instanceof Date)return v;if(typeof v==='number')return parseDate(v);return parseDate(String(v).trim());}
+function money(v,d=0){if(!v)return d>0?'0.0만원':'0원';if(Math.abs(v)>=100000000)return (v/100000000).toFixed(d||1).replace(/\.0$/,'')+'억';if(Math.abs(v)>=10000)return (v/10000).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d})+'만원';return Math.round(v).toLocaleString()+'원';}
+function pct(v,d=1){return Number.isFinite(v)?(v*100).toFixed(d)+'%':'-';}
+function setThisMonth(){const today=new Date();const s=new Date(today.getFullYear(),today.getMonth(),1);const e=new Date(today.getFullYear(),today.getMonth()+1,0);document.getElementById('start').value=ymd(s);document.getElementById('end').value=ymd(e);}
+
+function setThisWeek(){
+  const pad=n=>String(n).padStart(2,'0');
+  const toYmd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+
+  const today=new Date();
+  const start=new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  start.setDate(start.getDate()-start.getDay()); // 일요일
+  const end=new Date(start.getFullYear(), start.getMonth(), start.getDate()+6); // 토요일
+
+  document.getElementById('start').value=toYmd(start);
+  document.getElementById('end').value=toYmd(end);
+}
+
+function setToday(){
+  const pad=n=>String(n).padStart(2,'0');
+  const today=new Date();
+  const ymd=today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+  document.getElementById('start').value=ymd;
+  document.getElementById('end').value=ymd;
+}
+
+
+
+function selectedStores(){const c=document.getElementById('company').value;if(c==='neo')return {visitStores:['A.네오디스'],salesStores:['네오디스'],label:'네오디스'};if(c==='mak')return {visitStores:['A.맥필드'],salesStores:['맥필드스토어'],label:'맥필드스토어'};return {visitStores:['A.네오디스','A.맥필드'],salesStores:['네오디스','맥필드스토어'],label:'네오디스+맥필드'};}
+async function loadData(){
+  setThisMonth();
+  document.getElementById('status').textContent='데이터 로딩 중...';
+  try{
+    const [visitRows,salesRows,priceRows]=await Promise.all([
+      fetchSheet(SHEET_VISIT,'raw'),
+      fetchSheet(SHEET_SALES,'MASTER'),
+      fetchSheet(SHEET_SALES,'단가_매핑')
+    ]);
+
+    rawVisit=visitRows;
+    rawSales=salesRows.filter(r=>String(r['거래구분']||'').trim()==='네이버출고');
+    rawPriceMap=priceRows||[];
+
+    document.getElementById('status').textContent=`연결 완료: 방문자 ${rawVisit.length.toLocaleString()}행 / 판매 ${rawSales.length.toLocaleString()}행 / 단가매핑 ${rawPriceMap.length.toLocaleString()}행`;
+    refresh();
+  }catch(e){
+    document.getElementById('status').textContent='오류: '+e.message;
+    console.error(e);
+  }
+}
+function buildVisit(start,end,visitStores){const byDateStore={};rawVisit.forEach(r=>{const d=parseDate(r['date']);if(!d)return;const ds=ymd(d);if(ds<start||ds>end)return;const store=String(r['store']||'').trim();const h=parseInt(r['hour'],10);if(!Number.isFinite(h))return;const key=ds+'||'+store;if(!byDateStore[key])byDateStore[key]={dateStr:ds,store,hours:{}};byDateStore[key].hours[h]=num(r['today_visit']);});const hourlyRows=[],dailyRows=[];Object.values(byDateStore).forEach(e=>{const hs=Object.keys(e.hours).map(Number).sort((a,b)=>a-b);hs.forEach((h,i)=>{const prev=i>0?e.hours[hs[i-1]]:0;hourlyRows.push({dateStr:e.dateStr,store:e.store,hour:h,delta:Math.max(0,e.hours[h]-prev)});});const last=hs[hs.length-1];if(last!==undefined)dailyRows.push({dateStr:e.dateStr,store:e.store,visit:e.hours[last]});});const myDaily=dailyRows.filter(r=>visitStores.includes(r.store));const myHourly=hourlyRows.filter(r=>visitStores.includes(r.store));const dailyMap={};myDaily.forEach(r=>dailyMap[r.dateStr]=(dailyMap[r.dateStr]||0)+r.visit);return {dailyRows,hourlyRows,myDaily,myHourly,dailyMap};}
+function buildSales(start,end,salesStores){
+  const orderMap={},lineRows=[];
+  rawSales.forEach(r=>{
+    const shop=String(r['쇼핑몰']||'').trim();
+    if(!salesStores.includes(shop))return;
+
+    const dt=parseOrderDatetime(r);
+    if(!dt)return;
+
+    const ds=ymd(dt);
+    if(ds<start||ds>end)return;
+
+    const on=String(r['주문번호']||'').trim() || String(r['상품주문번호']||'').trim();
+    if(!on)return;
+
+    const amt=num(r['정산예정금액']);
+    const qty=num(r['수량']) || num(r['주문수량']) || 1;
+    const code=String(r['기준상품코드']||r['상품코드']||r['상품번호']||'').trim();
+
+    if(!orderMap[on])orderMap[on]={orderNo:on,h:dt.getHours(),dow:dt.getDay(),amt:0,ds,shop};
+    orderMap[on].amt+=amt;
+
+    lineRows.push({...r,ds,h:dt.getHours(),dow:dt.getDay(),amt,qty,code,shop,orderNo:on});
+  });
+
+  const orders=Object.values(orderMap);
+  const dailyMap={};
+  orders.forEach(o=>{
+    if(!dailyMap[o.ds])dailyMap[o.ds]={orders:0,rev:0};
+    dailyMap[o.ds].orders++;
+    dailyMap[o.ds].rev+=o.amt;
+  });
+
+  return {orders,lineRows,dailyMap};
+}
+function buildInterest(start,end,visitStores){const byStore={},dailyStore={};rawVisit.forEach(r=>{const d=parseDate(r['date']);if(!d)return;const ds=ymd(d);if(ds<start||ds>end)return;const store=String(r['store']||'').trim();if(!visitStores.includes(store))return;if(r['interest']==null||r['interest']==='')return;const h=parseInt(r['hour'],10);const hh=Number.isFinite(h)?h:0;const key=ds+'||'+store;const val=num(r['interest']);const t=ds+' '+String(hh).padStart(2,'0');if(!byStore[store])byStore[store]={firstT:t,first:val,lastT:t,last:val};else{if(t<byStore[store].firstT){byStore[store].firstT=t;byStore[store].first=val;}if(t>byStore[store].lastT){byStore[store].lastT=t;byStore[store].last=val;}}if(!dailyStore[key]||hh>=dailyStore[key].hour)dailyStore[key]={dateStr:ds,store,hour:hh,val};});const first=Object.values(byStore).reduce((a,b)=>a+b.first,0);const latest=Object.values(byStore).reduce((a,b)=>a+b.last,0);const daily={};Object.values(dailyStore).forEach(r=>{daily[r.dateStr]=(daily[r.dateStr]||0)+r.val;});const dates=Object.keys(daily).sort();return {dates,values:dates.map(d=>daily[d]),latest,first,growth:latest-first};}
+function daysBetween(start,end){const a=parseDate(start),b=parseDate(end);return Math.max(1,Math.round((b-a)/86400000)+1);}
+function elapsedDaysInRange(start,end){const today=ymd(new Date());const realEnd=today<end?today:end;return daysBetween(start,realEnd);}
+function forecast(total,start,end){const elapsed=elapsedDaysInRange(start,end),totalDays=daysBetween(start,end);return elapsed?total/elapsed*totalDays:0;}
+
+function ymdToDateSafe(s){
+  const p=String(s||'').split('-').map(Number);
+  if(p.length<3 || !p[0] || !p[1] || !p[2]) return null;
+  return new Date(p[0],p[1]-1,p[2]);
+}
+function dateToYmdSafe(d){
+  const pad=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+function addDaysSafe(d,n){
+  const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  x.setDate(x.getDate()+n);
+  return x;
+}
+function isLastDayOfMonth(d){
+  return d.getDate()===new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+}
+function getDateRangeArray(startDate,endDate){
+  const arr=[];
+  const days=Math.floor((endDate.getTime()-startDate.getTime())/86400000)+1;
+  for(let i=0;i<days;i++) arr.push(dateToYmdSafe(addDaysSafe(startDate,i)));
+  return arr;
+}
+function getComparePeriodSafe(startStr,endStr){
+  const s=ymdToDateSafe(startStr);
+  const e=ymdToDateSafe(endStr);
+  if(!s || !e) return {start:'',end:'',dates:[],label:'비교기간'};
+
+  const days=Math.floor((e.getTime()-s.getTime())/86400000)+1;
+  let ps,pe,label;
+
+  // 이번달/월간: 시작일이 1일이고 종료일이 그달 말일이면 전월 한 달 전체
+  if(s.getDate()===1 && isLastDayOfMonth(e)){
+    ps=new Date(s.getFullYear(),s.getMonth()-1,1);
+    pe=new Date(s.getFullYear(),s.getMonth(),0);
+    label='전월';
+  }
+  // 이번주/주간: 일요일~토요일 7일이면 전주 일요일~토요일
+  else if(days===7 && s.getDay()===0 && e.getDay()===6){
+    ps=addDaysSafe(s,-7);
+    pe=addDaysSafe(e,-7);
+    label='전주';
+  }
+  // 임의 기간: 같은 일수의 바로 직전 기간
+  else{
+    pe=addDaysSafe(s,-1);
+    ps=addDaysSafe(pe,-days+1);
+    label='직전 동기';
+  }
+
+  return {start:dateToYmdSafe(ps),end:dateToYmdSafe(pe),dates:getDateRangeArray(ps,pe),label};
+}
+
+function refresh(){
+  if(!rawVisit.length&&!rawSales.length){document.getElementById('status').textContent='먼저 데이터를 로딩하세요.';return;}
+  const start=document.getElementById('start').value,end=document.getElementById('end').value;
+  const sel=selectedStores();
+  document.getElementById('headerRange').textContent=`${sel.label} · ${start} ~ ${end}`;
+
+  const visit=buildVisit(start,end,sel.visitStores);
+  const sales=buildSales(start,end,sel.salesStores);
+  const interest=buildInterest(start,end,sel.visitStores);
+  const dates=[...new Set([...Object.keys(visit.dailyMap),...Object.keys(sales.dailyMap),...interest.dates])].sort();
+
+  const visitTotal=Object.values(visit.dailyMap).reduce((a,b)=>a+b,0);
+  const orderTotal=sales.orders.length;
+  const revTotal=sales.orders.reduce((a,b)=>a+b.amt,0);
+  const elapsed=elapsedDaysInRange(start,end);
+  const totalDays=daysBetween(start,end);
+  const visitAvg=elapsed?visitTotal/elapsed:0;
+  const orderAvg=elapsed?orderTotal/elapsed:0;
+  const revAvg=elapsed?revTotal/elapsed:0;
+  const conv=visitTotal?orderTotal/visitTotal:NaN;
+  const aov=orderTotal?revTotal/orderTotal:0;
+
+  const fVisit=forecast(visitTotal,start,end),fOrders=forecast(orderTotal,start,end),fRev=forecast(revTotal,start,end);
+  const intGrowth=interest.latest-interest.first;
+  const fInt=interest.latest + (elapsed?intGrowth/elapsed*(totalDays-elapsed):0);
+
+  document.getElementById('kVisit').textContent=Math.round(visitTotal).toLocaleString();
+  document.getElementById('kVisitSub').innerHTML=`일평균 <b>${visitAvg.toFixed(1)}</b><br>월말 예상 ${Math.round(fVisit).toLocaleString()}`;
+
+  document.getElementById('kInterest').textContent=Math.round(interest.latest).toLocaleString();
+  document.getElementById('kInterestSub').innerHTML=`기간 증가 <b>${intGrowth>=0?'+':''}${Math.round(intGrowth).toLocaleString()}</b><br>(시작 ${Math.round(interest.first).toLocaleString()} → 현재 ${Math.round(interest.latest).toLocaleString()})<br>월말 예상 ${Math.round(fInt).toLocaleString()}`;
+
+  document.getElementById('kOrders').textContent=orderTotal.toLocaleString()+'건';
+  document.getElementById('kOrdersSub').innerHTML=`일평균 <b>${orderAvg.toFixed(1)}건</b><br>월말 예상 ${Math.round(fOrders).toLocaleString()}건`;
+
+  document.getElementById('kRevenue').textContent=money(revTotal);
+  document.getElementById('kRevenueSub').innerHTML=`일평균 <b>${money(revAvg,1)}</b><br>월말 예상 ${money(fRev)}`;
+
+  document.getElementById('kConv').textContent=pct(conv,1);
+  document.getElementById('kAov').textContent=money(aov,1);
+
+  document.getElementById('insightToday').textContent=`선택 기간 누적 방문 ${Math.round(visitTotal).toLocaleString()}명, 주문 ${orderTotal.toLocaleString()}건, 전환율 ${pct(conv,1)}입니다.`;
+  document.getElementById('insightForecast').textContent=`현재 속도 기준 월말 예상은 방문 ${Math.round(fVisit).toLocaleString()}명, 주문 ${Math.round(fOrders).toLocaleString()}건, 정산 ${money(fRev)}입니다.`;
+  document.getElementById('insightAction').textContent=conv<0.01?'방문 대비 주문 전환이 낮습니다. 방문 상위 시간대의 대표상품/쿠폰/상세페이지를 우선 점검하세요.':'전환율은 기본 수준 이상입니다. 매출 확대는 방문 상위 시간대 광고 강화와 객단가 높은 상품 노출이 우선입니다.';
+
+  const dailyVisits=dates.map(d=>visit.dailyMap[d]||0),dailyOrders=dates.map(d=>sales.dailyMap[d]?.orders||0),dailyRev=dates.map(d=>Math.round((sales.dailyMap[d]?.rev||0)/10000));
+  draw('monthlyTrendChart','bar',dates.map(d=>d.slice(5)),[
+    {label:'주문건수',type:'bar',data:dailyOrders,backgroundColor:'rgba(24,128,56,.72)',borderColor:'#188038',borderWidth:1,yAxisID:'y1',order:1},
+    {label:'방문자',type:'line',data:dailyVisits,borderColor:'#1a73e8',backgroundColor:'rgba(26,115,232,.08)',borderWidth:3,pointRadius:3,tension:.25,yAxisID:'y',order:2},
+    {label:'매출(만원)',type:'line',data:dailyRev,borderColor:'#f9ab00',backgroundColor:'rgba(249,171,0,.08)',borderWidth:2,borderDash:[6,4],pointRadius:2,tension:.25,yAxisID:'y',order:3}
+  ],true);
+
+  const compare=getComparePeriodSafe(start,end);
+  const prevVisit=buildVisit(compare.start,compare.end,sel.visitStores);
+  const prevSales=buildSales(compare.start,compare.end,sel.salesStores);
+  const prevDates=compare.dates;
+  const prevDailyVisits=prevDates.map(d=>prevVisit.dailyMap[d]||0);
+  const prevDailyOrders=prevDates.map(d=>prevSales.dailyMap[d]?.orders||0);
+  const prevDailyRev=prevDates.map(d=>Math.round((prevSales.dailyMap[d]?.rev||0)/10000));
+  const prevHint=document.getElementById('prevMonthHint');
+  if(prevHint && prevDates.length){
+    prevHint.textContent=`${compare.label} ${compare.start} ~ ${compare.end} / 방문자·매출은 좌측, 주문건수는 우측 축`;
+  }
+  draw('prevMonthTrendChart','bar',prevDates.map(d=>d.slice(5)),[
+    {label:compare.label+' 주문건수',type:'bar',data:prevDailyOrders,backgroundColor:'rgba(24,128,56,.72)',borderColor:'#188038',borderWidth:1,yAxisID:'y1',order:1},
+    {label:compare.label+' 방문자',type:'line',data:prevDailyVisits,borderColor:'#1a73e8',backgroundColor:'rgba(26,115,232,.08)',borderWidth:3,pointRadius:3,tension:.25,yAxisID:'y',order:2},
+    {label:compare.label+' 매출(만원)',type:'line',data:prevDailyRev,borderColor:'#f9ab00',backgroundColor:'rgba(249,171,0,.08)',borderWidth:2,borderDash:[6,4],pointRadius:2,tension:.25,yAxisID:'y',order:3}
+  ],true);
+  draw('forecastChart','bar',['방문자','주문','매출(만원)'],[
+    {label:'현재',data:[visitTotal,orderTotal,Math.round(revTotal/10000)],backgroundColor:'#9aa0a6'},
+    {label:'월말예상',data:[Math.round(fVisit),Math.round(fOrders),Math.round(fRev/10000)],backgroundColor:'#1a73e8'}
+  ],true,{
+    datalabels:{
+      display:true,
+      anchor:'end',
+      align:'top',
+      offset:2,
+      formatter:v=>Number(v).toLocaleString(),
+      font:{weight:'700',size:11},
+      color:'#202124'
+    }
+  });
+  renderConversion(visit,sales);renderCompetitor(start,end);renderHistory(dates,dailyVisits,dailyOrders,dailyRev,visit,sales);renderProduct(sales);renderCustomer(sales);
+  document.getElementById('status').textContent=`분석 완료: ${sel.label} / ${start} ~ ${end}`;
+}
+function renderConversion(visit,sales){
+  const hours=Array.from({length:24},(_,i)=>i+'시');
+
+  const hVisit=Array(24).fill(0);
+  const hOrders=Array(24).fill(0);
+  const hRev=Array(24).fill(0);
+  visit.myHourly.forEach(r=>hVisit[r.hour]+=r.delta);
+  sales.orders.forEach(o=>{hOrders[o.h]++; hRev[o.h]+=o.amt||0;});
+  const hRevMan=hRev.map(v=>Math.round(v/10000));
+
+  draw('hourCompareChart','bar',hours,[
+    {label:'방문자',type:'line',data:hVisit,borderColor:'#1a73e8',backgroundColor:'rgba(26,115,232,.08)',borderWidth:3,pointRadius:2,tension:.25,yAxisID:'y',order:2},
+    {label:'주문건수',type:'bar',data:hOrders,backgroundColor:'rgba(24,128,56,.75)',borderColor:'#188038',borderWidth:1,yAxisID:'y1',order:1},
+    {label:'매출(만원)',type:'line',data:hRevMan,borderColor:'#f9ab00',backgroundColor:'rgba(249,171,0,.08)',borderWidth:2,borderDash:[6,4],pointRadius:2,tension:.25,yAxisID:'y',order:3}
+  ],true,{yTitle:'방문자 / 매출(만원)',y1Title:'주문건수'});
+
+  const dowVisit=Array(7).fill(0);
+  const dowOrders=Array(7).fill(0);
+  const dowRev=Array(7).fill(0);
+
+  visit.myDaily.forEach(r=>{
+    const d=parseDate(r.dateStr);
+    if(d)dowVisit[d.getDay()]+=r.visit;
+  });
+  sales.orders.forEach(o=>{dowOrders[o.dow]++; dowRev[o.dow]+=o.amt||0;});
+
+  const conv=dowVisit.map((v,i)=>v?dowOrders[i]/v*100:0);
+  const dowRevMan=dowRev.map(v=>Math.round(v/10000));
+  draw('dowConvChart','bar',DOW,[
+    {label:'전환율(%)',type:'bar',data:conv,backgroundColor:'#1a73e8',borderColor:'#1a73e8',borderWidth:1,yAxisID:'y'},
+    {label:'매출(만원)',type:'line',data:dowRevMan,borderColor:'#f9ab00',backgroundColor:'rgba(249,171,0,.08)',borderWidth:3,borderDash:[6,4],pointRadius:3,tension:.25,yAxisID:'y1'}
+  ],true,{yTitle:'전환율 %',y1Title:'매출(만원)',
+    datalabels:{
+      display:function(ctx){return ctx.dataset.label==='전환율(%)';},
+      anchor:'end',
+      align:'top',
+      offset:2,
+      formatter:v=>Number(v).toFixed(1)+'%',
+      font:{weight:'700',size:11},
+      color:'#202124'
+    }
+  });
+
+  for(let dow=0;dow<7;dow++){
+    const vByHour=Array(24).fill(0);
+    const oByHour=Array(24).fill(0);
+    const rByHour=Array(24).fill(0);
+
+    visit.myHourly.forEach(r=>{
+      const d=parseDate(r.dateStr);
+      if(d && d.getDay()===dow) vByHour[r.hour]+=r.delta;
+    });
+    sales.orders.forEach(o=>{
+      if(o.dow===dow){oByHour[o.h]++; rByHour[o.h]+=o.amt||0;}
+    });
+
+    draw('dowHourChart'+dow,'bar',hours,[
+      {label:'방문자',type:'line',data:vByHour,borderColor:'#1a73e8',backgroundColor:'rgba(26,115,232,.08)',borderWidth:2,pointRadius:1,tension:.25,yAxisID:'y',order:2},
+      {label:'주문건수',type:'bar',data:oByHour,backgroundColor:'rgba(24,128,56,.72)',borderColor:'#188038',borderWidth:1,yAxisID:'y1',order:1},
+      {label:'매출(만원)',type:'line',data:rByHour.map(v=>Math.round(v/10000)),borderColor:'#f9ab00',backgroundColor:'rgba(249,171,0,.08)',borderWidth:2,borderDash:[6,4],pointRadius:1,tension:.25,yAxisID:'y',order:3}
+    ],true,{yTitle:'방문 / 매출(만원)',y1Title:'주문'});
+  }
+
+  const weak=hours.map((h,i)=>({
+    h,
+    visit:hVisit[i],
+    orders:hOrders[i],
+    rev:hRev[i],
+    conv:hVisit[i]?hOrders[i]/hVisit[i]*100:0
+  }));
+
+  document.getElementById('weakHourTable').innerHTML=
+    '<tr><th>시간</th><th>방문자</th><th>주문건수</th><th>매출액</th><th>전환율</th><th>판단</th></tr>'+
+    weak.map(r=>{
+      let judge='-';
+      let cls='';
+
+      if(r.visit<10){
+        judge='표본 적음';
+      }else if(r.visit>=30 && r.orders===0){
+        judge='문제 시간대';
+        cls='bad-row';
+      }else if(r.conv<0.5){
+        judge='매우 약함';
+        cls='bad-row';
+      }else if(r.conv<1){
+        judge='약함';
+        cls='weak-row';
+      }else if(r.conv<2){
+        judge='보통';
+      }else{
+        judge='강함';
+        cls='good-row';
+      }
+
+      return `<tr class="${cls}"><td>${r.h}</td><td>${Math.round(r.visit).toLocaleString()}</td><td>${r.orders}</td><td>${money(r.rev)}</td><td>${r.visit?r.conv.toFixed(1)+'%':'-'}</td><td><b>${judge}</b></td></tr>`;
+    }).join('');
+}
+
+function storeCleanName(s){
+  return String(s||'').replace(/^[A-C]\./,'').trim();
+}
+function storeGroup(s){
+  const t=String(s||'').trim().toUpperCase();
+  if(t.startsWith('A.'))return 'A';
+  if(t.startsWith('B.'))return 'B';
+  if(t.startsWith('C.'))return 'C';
+  return '기타';
+}
+
+let compState=null;
+const COMP_COLORS=[
+  '#1a73e8','#d93025','#188038','#f9ab00','#7b1fa2',
+  '#00acc1','#e8710a','#c2185b','#3949ab','#00897b',
+  '#ef6c00','#6d4c41','#546e7a','#8e24aa','#43a047',
+  '#fb8c00','#039be5','#e53935','#5e35b1','#00838f'
+];
+
+function compColor(i){return COMP_COLORS[i%COMP_COLORS.length];}
+function fmtInt(v){return Math.round(Number(v)||0).toLocaleString();}
+function arrAt(obj,key,i){
+  const a=obj && obj[key];
+  if(!Array.isArray(a))return null;
+  const v=a[i];
+  return (v===null||v===undefined)?null:Number(v);
+}
+function dateList(start,end){
+  const out=[];
+  const s=parseDate(start), e=parseDate(end);
+  if(!s||!e)return out;
+  let d=new Date(s.getFullYear(),s.getMonth(),s.getDate());
+  const last=new Date(e.getFullYear(),e.getMonth(),e.getDate());
+  while(d<=last){
+    out.push(ymd(d));
+    d.setDate(d.getDate()+1);
+  }
+  return out;
+}
+
+function buildCompetitorState(start,end){
+  const dates=dateList(start,end);
+  const byDateStore={};
+  const storeSet=new Set();
+  const activeDatesByStore={};
+
+  rawVisit.forEach(r=>{
+    const d=parseDate(r['date']);
+    if(!d)return;
+    const ds=ymd(d);
+    if(ds<start||ds>end)return;
+
+    const store=String(r['store']||'').trim();
+    if(!store)return;
+
+    const h=parseInt(r['hour'],10);
+    if(!Number.isFinite(h))return;
+
+    storeSet.add(store);
+    if(!activeDatesByStore[store])activeDatesByStore[store]=new Set();
+    activeDatesByStore[store].add(ds);
+
+    const key=ds+'||'+store;
+    if(!byDateStore[key])byDateStore[key]={dateStr:ds,store,hours:{}};
+    byDateStore[key].hours[h]=num(r['today_visit']);
+  });
+
+  const stores=[...storeSet].sort((a,b)=>{
+    const ga=storeGroup(a),gb=storeGroup(b);
+    if(ga!==gb)return ga.localeCompare(gb);
+    return storeCleanName(a).localeCompare(storeCleanName(b),'ko');
+  });
+
+  const dailyByStore={};
+  const hourIncByStore={};
+  const hourHasDataByStore={};
+  const hourCumTotalByStore={};
+  const hourCumAvgByStore={};
+
+  stores.forEach(s=>{
+    dailyByStore[s]=dates.map(()=>null);
+    hourIncByStore[s]=Array(24).fill(0);
+    hourHasDataByStore[s]=Array(24).fill(false);
+    hourCumTotalByStore[s]=Array(24).fill(null);
+    hourCumAvgByStore[s]=Array(24).fill(null);
+  });
+
+  Object.values(byDateStore).forEach(e=>{
+    const hs=Object.keys(e.hours).map(Number).sort((a,b)=>a-b);
+
+    hs.forEach((h,i)=>{
+      const prev=i>0?e.hours[hs[i-1]]:0;
+      const delta=Math.max(0,e.hours[h]-prev);
+      hourIncByStore[e.store][h]+=delta;
+      hourHasDataByStore[e.store][h]=true;
+    });
+
+    const lastH=hs[hs.length-1];
+    const dailyVal=lastH!==undefined ? e.hours[lastH] : null;
+    const idx=dates.indexOf(e.dateStr);
+    if(idx>=0)dailyByStore[e.store][idx]=dailyVal;
+  });
+
+  stores.forEach(s=>{
+    const activeDayCount=Math.max(1,activeDatesByStore[s]?.size||0);
+    let cum=0;
+    const hasAnyData=(activeDatesByStore[s]?.size||0)>0;
+
+    for(let h=0;h<24;h++){
+      cum+=hourIncByStore[s][h]||0;
+
+      if(hasAnyData && hourHasDataByStore[s][h]){
+        hourCumTotalByStore[s][h]=cum;
+        hourCumAvgByStore[s][h]=cum/activeDayCount;
+      }else{
+        hourCumTotalByStore[s][h]=null;
+        hourCumAvgByStore[s][h]=null;
+      }
+    }
+  });
+
+  // All Average: 데이터가 있는 회사만 평균 포함
+  const allHourTotal=Array(24).fill(null);
+  const allHourAvg=Array(24).fill(null);
+  for(let h=0;h<24;h++){
+    let sumTotal=0,cntTotal=0,sumAvg=0,cntAvg=0;
+    stores.forEach(s=>{
+      const t=hourCumTotalByStore[s][h];
+      const a=hourCumAvgByStore[s][h];
+      if(t!==null && t!==undefined){sumTotal+=t;cntTotal++;}
+      if(a!==null && a!==undefined){sumAvg+=a;cntAvg++;}
+    });
+    allHourTotal[h]=cntTotal?sumTotal:null;
+    allHourAvg[h]=cntAvg?sumAvg/cntAvg:null;
+  }
+
+  // 일별도 데이터가 있는 회사만 평균 포함. 없는 회사/날짜는 null 유지
+  const allDailyTotal=dates.map((d,i)=>{
+    let sum=0,cnt=0;
+    stores.forEach(s=>{
+      const v=dailyByStore[s][i];
+      if(v!==null && v!==undefined){sum+=v;cnt++;}
+    });
+    return cnt?sum:null;
+  });
+
+  const allDailyAvg=dates.map((d,i)=>{
+    let sum=0,cnt=0;
+    stores.forEach(s=>{
+      const v=dailyByStore[s][i];
+      if(v!==null && v!==undefined){sum+=v;cnt++;}
+    });
+    return cnt?sum/cnt:null;
+  });
+
+  return {start,end,dates,stores,dailyByStore,hourCumTotalByStore,hourCumAvgByStore,allHourTotal,allHourAvg,allDailyTotal,allDailyAvg};
+}
+
+function renderCompChecks(){
+  const box=document.getElementById('competitorStoreChecks');
+  if(!box || !compState)return;
+  const defaultStores=new Set(['A.네오디스','A.맥필드','A.KMA']);
+  box.innerHTML=compState.stores.map((s,i)=>{
+    const g=storeGroup(s).toLowerCase();
+    const checked=defaultStores.has(String(s).trim())?'checked':'';
+    return `<label class="grp-${g}"><input type="checkbox" value="${s.replace(/"/g,'&quot;')}" ${checked} onchange="renderSelectedCompetitorViews()"> ${s}</label>`;
+  }).join('');
+}
+
+function selectedCompStores(){
+  return [...document.querySelectorAll('#competitorStoreChecks input:checked')].map(x=>x.value);
+}
+
+function lineDs(label,data,color,width){
+  return {
+    label,
+    type:'line',
+    data:(data||[]).map(v=>(v===null||v===undefined||Number.isNaN(Number(v)))?null:Math.round(Number(v))),
+    borderColor:color,
+    backgroundColor:color,
+    pointBackgroundColor:color,
+    pointBorderColor:color,
+    borderWidth:width||3,
+    pointRadius:3,
+    tension:.2,
+    fill:false
+  };
+}
+
+function renderSelectedCompetitorViews(){
+  if(!compState)return;
+  const selected=selectedCompStores();
+
+  function hasVal(v){return v!==null && v!==undefined && !Number.isNaN(Number(v));}
+  function fmtCell(v){return hasVal(v)?fmtInt(v):'';}
+  function series(arr){return (arr||[]).map(v=>hasVal(v)?Math.round(Number(v)):null);}
+
+  const hourLabels=Array.from({length:24},(_,i)=>String(i).padStart(2,'0')+'시');
+  const hourSets=[lineDs('All Average',series(compState.allHourAvg),'#000000',4)];
+  selected.forEach((s,i)=>hourSets.push(lineDs(s,series(compState.hourCumAvgByStore[s]),compColor(i),3)));
+  draw('selectedStoreHourChart','line',hourLabels,hourSets,true,{yTitle:'누적평균 방문자'});
+
+  let hHtml='<tr><th>시간</th><th>All Avg</th><th>All Total</th>'+selected.map(s=>`<th>${storeCleanName(s)}</th>`).join('')+'</tr>';
+  hourLabels.forEach((lab,h)=>{
+    hHtml+='<tr>'+
+      `<td>${lab}</td>`+
+      `<td>${fmtCell(compState.allHourAvg[h])}</td>`+
+      `<td>${fmtCell(compState.allHourTotal[h])}</td>`+
+      selected.map(s=>`<td>${fmtCell(arrAt(compState.hourCumAvgByStore,s,h))}</td>`).join('')+
+      '</tr>';
+  });
+  hHtml+='<tr style="font-weight:900;background:#f1f3f4;"><th>Total</th>'+
+    `<th>${fmtCell(compState.allHourAvg[23])}</th>`+
+    `<th>${fmtCell(compState.allHourTotal[23])}</th>`+
+    selected.map(s=>`<th>${fmtCell(arrAt(compState.hourCumAvgByStore,s,23))}</th>`).join('')+
+    '</tr>';
+  document.getElementById('selectedStoreHourTable').innerHTML=hHtml;
+
+  // 일별 방문자 추이: 선택 회사에 데이터가 하나도 없는 날짜는 행/그래프에서 제외
+  const validIdx=compState.dates.map((d,i)=>i).filter(i=>{
+    if(hasVal(compState.allDailyAvg[i]) || hasVal(compState.allDailyTotal[i]))return true;
+    return selected.some(s=>hasVal(arrAt(compState.dailyByStore,s,i)));
+  });
+
+  const dayLabels=validIdx.map(i=>compState.dates[i].slice(5));
+  const daySets=[lineDs('All Average',validIdx.map(i=>compState.allDailyAvg[i]),'#000000',4)];
+  selected.forEach((s,i)=>{
+    daySets.push(lineDs(s,validIdx.map(idx=>arrAt(compState.dailyByStore,s,idx)),compColor(i),3));
+  });
+
+  draw('selectedStoreDailyChart','line',dayLabels,daySets,true,{yTitle:'일별 방문자',xLabelFull:true});
+
+  let dHtml='<tr><th>날짜</th><th>All Avg</th><th>All Total</th>'+selected.map(s=>`<th>${storeCleanName(s)}</th>`).join('')+'</tr>';
+  validIdx.forEach(i=>{
+    dHtml+='<tr>'+
+      `<td>${compState.dates[i].slice(5)}</td>`+
+      `<td>${fmtCell(compState.allDailyAvg[i])}</td>`+
+      `<td>${fmtCell(compState.allDailyTotal[i])}</td>`+
+      selected.map(s=>`<td>${fmtCell(arrAt(compState.dailyByStore,s,i))}</td>`).join('')+
+      '</tr>';
+  });
+
+  const totalAvgVals=validIdx.map(i=>compState.allDailyAvg[i]).filter(hasVal);
+  const totalAllVals=validIdx.map(i=>compState.allDailyTotal[i]).filter(hasVal);
+  dHtml+='<tr style="font-weight:900;background:#f1f3f4;"><th>Total</th>'+
+    `<th>${fmtCell(totalAvgVals.reduce((a,b)=>a+b,0))}</th>`+
+    `<th>${fmtCell(totalAllVals.reduce((a,b)=>a+b,0))}</th>`+
+    selected.map(s=>{
+      const vals=validIdx.map(i=>arrAt(compState.dailyByStore,s,i)).filter(hasVal);
+      return `<th>${fmtCell(vals.length?vals.reduce((a,b)=>a+b,0):null)}</th>`;
+    }).join('')+
+    '</tr>';
+  document.getElementById('selectedStoreDailyTable').innerHTML=dHtml;
+}
+
+function renderCompetitor(start,end){
+  const byStore={};
+
+  // 방문자 집계: 모든 스토어 대상
+  const visitAll=buildVisit(start,end,[]);
+  visitAll.dailyRows.forEach(r=>{
+    if(!byStore[r.store])byStore[r.store]={visit:0,days:0,interestFirst:null,interestLast:null,interestFirstT:'',interestLastT:''};
+    byStore[r.store].visit+=r.visit;
+    byStore[r.store].days++;
+  });
+
+  // 관심고객: 기간 첫 값, 마지막 값, 증가수
+  rawVisit.forEach(r=>{
+    const d=parseDate(r['date']);
+    if(!d)return;
+    const ds=ymd(d);
+    if(ds<start||ds>end||r['interest']==null||r['interest']==='')return;
+
+    const s=String(r['store']||'').trim();
+    const h=parseInt(r['hour'],10);
+    const hh=Number.isFinite(h)?h:0;
+    const t=ds+' '+String(hh).padStart(2,'0');
+    const val=num(r['interest']);
+
+    if(!byStore[s])byStore[s]={visit:0,days:0,interestFirst:null,interestLast:null,interestFirstT:'',interestLastT:''};
+
+    if(byStore[s].interestFirst===null || t<byStore[s].interestFirstT){
+      byStore[s].interestFirst=val;
+      byStore[s].interestFirstT=t;
+    }
+    if(byStore[s].interestLast===null || t>byStore[s].interestLastT){
+      byStore[s].interestLast=val;
+      byStore[s].interestLastT=t;
+    }
+  });
+
+  const rows=Object.entries(byStore).map(([s,v])=>{
+    const latest=v.interestLast??0;
+    const first=v.interestFirst??latest;
+    return {
+      store:storeCleanName(s),
+      raw:s,
+      group:storeGroup(s),
+      avg:v.days?v.visit/v.days:0,
+      total:v.visit,
+      interest:latest,
+      interestGrowth:latest-first
+    };
+  }).sort((a,b)=>b.avg-a.avg);
+
+  const topVisit=rows.slice(0,15);
+  draw('compVisitChart','bar',topVisit.map(r=>r.store),[
+    {label:'일평균 방문자',data:topVisit.map(r=>Math.round(r.avg)),backgroundColor:'#1a73e8'}
+  ],false,{
+    xLabelFull:true,
+    datalabels:{
+      display:true,anchor:'end',align:'top',offset:2,
+      formatter:v=>Number(v).toLocaleString(),
+      font:{weight:'700',size:10},color:'#202124'
+    }
+  });
+
+  const topInt=[...rows].sort((a,b)=>b.interest-a.interest).slice(0,15);
+  draw('compInterestChart','bar',topInt.map(r=>r.store),[
+    {label:'관심고객',data:topInt.map(r=>Math.round(r.interest)),backgroundColor:'#d93025',yAxisID:'y'},
+    {label:'기간 증가수',data:topInt.map(r=>Math.round(r.interestGrowth)),backgroundColor:'#f9ab00',yAxisID:'y1'}
+  ],true,{
+    xLabelFull:true,
+    yTitle:'관심고객',
+    y1Title:'기간 증가수',
+    datalabels:{
+      display:true,anchor:'end',align:'top',offset:2,
+      formatter:v=>Number(v).toLocaleString(),
+      font:{weight:'700',size:10},color:'#202124'
+    }
+  });
+
+  const tableRows=rows.map((r,i)=>{
+    const cls=r.group==='A'?'comp-row-a':(r.group==='B'?'comp-row-b':'comp-row-c');
+    return `<tr class="${cls}"><td>${i+1}</td><td>${r.raw}</td><td>${Math.round(r.avg).toLocaleString()}</td><td>${Math.round(r.total).toLocaleString()}</td><td>${Math.round(r.interest).toLocaleString()}</td><td>${r.interestGrowth>=0?'+':''}${Math.round(r.interestGrowth).toLocaleString()}</td></tr>`;
+  }).join('');
+
+  const totalAvg=rows.reduce((a,r)=>a+r.avg,0);
+  const totalVisit=rows.reduce((a,r)=>a+r.total,0);
+  const totalInterest=rows.reduce((a,r)=>a+r.interest,0);
+  const totalInterestGrowth=rows.reduce((a,r)=>a+r.interestGrowth,0);
+
+  document.getElementById('competitorTable').innerHTML=
+    '<tr><th>순위</th><th>스토어</th><th>일평균 방문</th><th>기간 방문합계</th><th>관심고객</th><th>관심 증가</th></tr>'+
+    tableRows+
+    `<tr style="font-weight:900;background:#f1f3f4;"><th>Total</th><th>전체 합계</th><th>${Math.round(totalAvg).toLocaleString()}</th><th>${Math.round(totalVisit).toLocaleString()}</th><th>${Math.round(totalInterest).toLocaleString()}</th><th>${totalInterestGrowth>=0?'+':''}${Math.round(totalInterestGrowth).toLocaleString()}</th></tr>`;
+
+  compState=buildCompetitorState(start,end);
+  renderCompChecks();
+  renderSelectedCompetitorViews();
+}
+
+function renderHistory(dates,dailyVisits,dailyOrders,dailyRev,visit,sales){
+  const yearStart='2026-01-01';
+  const today=ymd(new Date());
+  const sel=selectedStores();
+
+  // 중요: 과거분석은 현재 선택기간 데이터가 아니라 1월~오늘 데이터를 다시 집계
+  const histVisit=buildVisit(yearStart,today,sel.visitStores);
+  const histSales=buildSales(yearStart,today,sel.salesStores);
+
+  const monthly={};
+
+  Object.entries(histVisit.dailyMap).forEach(([d,v])=>{
+    if(d<yearStart || d>today)return;
+    const ym=d.slice(0,7);
+    if(!monthly[ym])monthly[ym]={visit:0,orders:0,rev:0};
+    monthly[ym].visit+=v;
+  });
+
+  Object.entries(histSales.dailyMap).forEach(([d,v])=>{
+    if(d<yearStart || d>today)return;
+    const ym=d.slice(0,7);
+    if(!monthly[ym])monthly[ym]={visit:0,orders:0,rev:0};
+    monthly[ym].orders+=v.orders||0;
+    monthly[ym].rev+=v.rev||0;
+  });
+
+  const startDate=parseDate(yearStart);
+  const endDate=parseDate(today);
+  const months=[];
+  let cur=new Date(startDate.getFullYear(),startDate.getMonth(),1);
+  const last=new Date(endDate.getFullYear(),endDate.getMonth(),1);
+  while(cur<=last){
+    const ym=cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0');
+    months.push(ym);
+    if(!monthly[ym])monthly[ym]={visit:0,orders:0,rev:0};
+    cur.setMonth(cur.getMonth()+1);
+  }
+
+  const visitArr=months.map(m=>Math.round(monthly[m].visit));
+  const orderArr=months.map(m=>Math.round(monthly[m].orders));
+  const revArr=months.map(m=>Math.round(monthly[m].rev/10000));
+  const convArr=months.map(m=>monthly[m].visit?monthly[m].orders/monthly[m].visit*100:0);
+  const aovArr=months.map(m=>monthly[m].orders?monthly[m].rev/monthly[m].orders:0);
+
+  draw('monthlyCompareChart','bar',months.map(m=>m.slice(5)),[
+    {label:'주문건수',type:'bar',data:orderArr,backgroundColor:'rgba(24,128,56,.75)',borderColor:'#188038',yAxisID:'y1'},
+    {label:'방문자',type:'line',data:visitArr,borderColor:'#1a73e8',borderWidth:3,pointRadius:3,tension:.25,yAxisID:'y'},
+    {label:'매출(만원)',type:'line',data:revArr,borderColor:'#f9ab00',borderWidth:2,borderDash:[6,4],pointRadius:2,tension:.25,yAxisID:'y'}
+  ],true,{
+    xLabelFull:true,
+    yTitle:'방문자 / 매출',
+    y1Title:'주문건수',
+    datalabels:{
+      display:true,
+      anchor:'end',
+      align:'top',
+      offset:2,
+      formatter:v=>Number(v).toLocaleString(),
+      font:{weight:'700',size:10},
+      color:'#202124'
+    }
+  });
+
+  draw('monthlyConvChart','line',months.map(m=>m.slice(5)),[
+    {label:'전환율(%)',data:convArr,borderColor:'#d93025',backgroundColor:'rgba(217,48,37,.12)',borderWidth:3,pointRadius:3,tension:.25}
+  ],false,{
+    datalabels:{
+      display:true,
+      anchor:'end',
+      align:'top',
+      formatter:v=>Number(v).toFixed(1)+'%',
+      font:{weight:'700',size:10},
+      color:'#202124'
+    }
+  });
+
+  draw('monthlyAovChart','line',months.map(m=>m.slice(5)),[
+    {label:'객단가',data:aovArr,borderColor:'#7b1fa2',backgroundColor:'rgba(123,31,162,.12)',borderWidth:3,pointRadius:3,tension:.25}
+  ],false,{
+    datalabels:{
+      display:true,
+      anchor:'end',
+      align:'top',
+      formatter:v=>Math.round(v).toLocaleString(),
+      font:{weight:'700',size:10},
+      color:'#202124'
+    }
+  });
+
+  function diffHtml(cur,prev){
+    if(prev===null || prev===undefined || Number(prev)===0)return '<span class="diff-flat">-</span>';
+    const diff=(Number(cur)-Number(prev))/Number(prev)*100;
+    const cls=diff>0?'diff-up':(diff<0?'diff-down':'diff-flat');
+    const sign=diff>0?'+':'';
+    return `<span class="${cls}">${sign}${diff.toFixed(1)}%</span>`;
+  }
+
+  const rows=months.map((m,i)=>{
+    return `<tr>
+      <td>${m}</td>
+      <td>${visitArr[i].toLocaleString()}</td>
+      <td>${diffHtml(visitArr[i],i>0?visitArr[i-1]:null)}</td>
+      <td>${orderArr[i].toLocaleString()}</td>
+      <td>${diffHtml(orderArr[i],i>0?orderArr[i-1]:null)}</td>
+      <td>${revArr[i].toLocaleString()}</td>
+      <td>${diffHtml(revArr[i],i>0?revArr[i-1]:null)}</td>
+      <td>${convArr[i].toFixed(1)}%</td>
+      <td>${diffHtml(convArr[i],i>0?convArr[i-1]:null)}</td>
+      <td>${Math.round(aovArr[i]).toLocaleString()}</td>
+      <td>${diffHtml(aovArr[i],i>0?aovArr[i-1]:null)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalVisit=visitArr.reduce((a,b)=>a+b,0);
+  const totalOrders=orderArr.reduce((a,b)=>a+b,0);
+  const totalRev=revArr.reduce((a,b)=>a+b,0);
+  const totalConv=totalVisit?totalOrders/totalVisit*100:0;
+  const totalAov=totalOrders?(totalRev*10000)/totalOrders:0;
+
+  document.getElementById('monthlyCompareTable').innerHTML=
+    '<tr><th>월</th><th>방문자</th><th>방문 증감</th><th>주문건수</th><th>주문 증감</th><th>매출(만원)</th><th>매출 증감</th><th>전환율</th><th>전환율 증감</th><th>객단가</th><th>객단가 증감</th></tr>'+
+    rows+
+    `<tr style="font-weight:900;background:#f1f3f4;">
+      <th>Total</th>
+      <th>${totalVisit.toLocaleString()}</th>
+      <th>-</th>
+      <th>${totalOrders.toLocaleString()}</th>
+      <th>-</th>
+      <th>${totalRev.toLocaleString()}</th>
+      <th>-</th>
+      <th>${totalConv.toFixed(1)}%</th>
+      <th>-</th>
+      <th>${Math.round(totalAov).toLocaleString()}</th>
+      <th>-</th>
+    </tr>`;
+}
+
+function renderProduct(sales){
+  const catMap={};
+  rawPriceMap.forEach(r=>{
+    const code=String(r['기준상품코드']||'').trim();
+    if(!code)return;
+    catMap[code]={
+      big:String(r['카테고리대']||'미분류').trim()||'미분류',
+      mid:String(r['카테고리중']||'미분류').trim()||'미분류',
+      small:String(r['카테고리소']||'미분류').trim()||'미분류'
+    };
+  });
+
+  const agg={};
+  const orderAll=new Set();
+  let totalQty=0,totalRev=0;
+
+  sales.lineRows.forEach(r=>{
+    const code=String(r.code||'').trim();
+    const cat=catMap[code]||{big:'미분류',mid:'미분류',small:'미분류'};
+    const qty=num(r.qty)||1;
+    const rev=num(r.amt);
+    const orderNo=String(r.orderNo||'').trim();
+
+    if(orderNo)orderAll.add(orderNo);
+    totalQty+=qty;
+    totalRev+=rev;
+
+    const key=[cat.big,cat.mid,cat.small].join('||');
+    if(!agg[key])agg[key]={big:cat.big,mid:cat.mid,small:cat.small,qty:0,rev:0,orders:new Set()};
+    agg[key].qty+=qty;
+    agg[key].rev+=rev;
+    if(orderNo)agg[key].orders.add(orderNo);
+  });
+
+  const totalOrders=orderAll.size;
+  document.getElementById('prodTotalOrders').textContent=totalOrders.toLocaleString();
+  document.getElementById('prodTotalQty').textContent=Math.round(totalQty).toLocaleString();
+  document.getElementById('prodTotalRev').textContent=money(totalRev);
+  document.getElementById('prodAovOrder').textContent=money(totalOrders?totalRev/totalOrders:0,1);
+  document.getElementById('prodAovQty').textContent=money(totalQty?totalRev/totalQty:0,1);
+
+  const list=Object.values(agg).map(v=>({
+    big:v.big,mid:v.mid,small:v.small,
+    orders:v.orders.size,
+    qty:v.qty,
+    rev:v.rev,
+    aovOrder:v.orders.size?v.rev/v.orders.size:0,
+    aovQty:v.qty?v.rev/v.qty:0
+  })).sort((a,b)=>{
+    if(a.big!==b.big)return a.big.localeCompare(b.big,'ko');
+    if(a.mid!==b.mid)return a.mid.localeCompare(b.mid,'ko');
+    return a.small.localeCompare(b.small,'ko');
+  });
+
+  const bigAgg={};
+  list.forEach(r=>{
+    if(!bigAgg[r.big])bigAgg[r.big]={orders:0,rev:0};
+    bigAgg[r.big].orders+=r.orders;
+    bigAgg[r.big].rev+=r.rev;
+  });
+
+  const bigList=Object.entries(bigAgg)
+    .map(([big,v])=>({big,orders:v.orders,rev:v.rev}))
+    .sort((a,b)=>b.rev-a.rev);
+
+  draw('categoryOrderPieChart','pie',
+    bigList.map(r=>r.big),
+    [{label:'매출건수',data:bigList.map(r=>r.orders)}],
+    true,
+    {
+      datalabels:{
+        display:true,
+        formatter:(v,ctx)=>{
+          const label=ctx.chart.data.labels[ctx.dataIndex]||'';
+          const data=ctx.chart.data.datasets[0].data;
+          const sum=data.reduce((a,b)=>a+Number(b||0),0);
+          const pct=sum?Number(v)/sum*100:0;
+          return label+'\n'+Number(v).toLocaleString()+'건\n'+pct.toFixed(1)+'%';
+        },
+        font:{weight:'700',size:11},
+        color:'#202124'
+      }
+    }
+  );
+
+  draw('categoryRevenuePieChart','pie',
+    bigList.map(r=>r.big),
+    [{label:'매출액',data:bigList.map(r=>Math.round(r.rev))}],
+    true,
+    {
+      datalabels:{
+        display:true,
+        formatter:(v,ctx)=>{
+          const label=ctx.chart.data.labels[ctx.dataIndex]||'';
+          const data=ctx.chart.data.datasets[0].data;
+          const sum=data.reduce((a,b)=>a+Number(b||0),0);
+          const pct=sum?Number(v)/sum*100:0;
+          return label+'\n'+money(v)+'\n'+pct.toFixed(1)+'%';
+        },
+        font:{weight:'700',size:11},
+        color:'#202124'
+      }
+    }
+  );
+
+  function tr(cells,style=''){
+    return `<tr ${style}>`+cells.map(c=>`<td>${c}</td>`).join('')+'</tr>';
+  }
+  function fmtNum(v){return Math.round(v).toLocaleString();}
+  function fmtMoney(v){return money(v);}
+
+  let out='<tr><th>카테고리대</th><th>카테고리중</th><th>카테고리소</th><th>주문건수</th><th>주문건수 비중</th><th>판매수량</th><th>매출</th><th>매출 비중</th><th>주문건 객단가</th><th>수량당 평균판매가</th></tr>';
+
+  let curBig='',curMid='';
+  let mid={orders:0,qty:0,rev:0}, big={orders:0,qty:0,rev:0};
+
+  function midSubtotal(){
+    if(!curMid)return '';
+    return tr([curBig,curMid,'소계',fmtNum(mid.orders),(totalOrders?mid.orders/totalOrders*100:0).toFixed(1)+'%',fmtNum(mid.qty),fmtMoney(mid.rev),(totalRev?mid.rev/totalRev*100:0).toFixed(1)+'%',fmtMoney(mid.orders?mid.rev/mid.orders:0),fmtMoney(mid.qty?mid.rev/mid.qty:0)],'style="background:#f8f9fa;font-weight:800;"');
+  }
+  function bigSubtotal(){
+    if(!curBig)return '';
+    return tr([curBig,'중계','',fmtNum(big.orders),(totalOrders?big.orders/totalOrders*100:0).toFixed(1)+'%',fmtNum(big.qty),fmtMoney(big.rev),(totalRev?big.rev/totalRev*100:0).toFixed(1)+'%',fmtMoney(big.orders?big.rev/big.orders:0),fmtMoney(big.qty?big.rev/big.qty:0)],'style="background:#e8f0fe;font-weight:900;"');
+  }
+
+  list.forEach(r=>{
+    if(curBig && r.big!==curBig){
+      out+=midSubtotal();
+      out+=bigSubtotal();
+      mid={orders:0,qty:0,rev:0};
+      big={orders:0,qty:0,rev:0};
+    }else if(curMid && r.mid!==curMid){
+      out+=midSubtotal();
+      mid={orders:0,qty:0,rev:0};
+    }
+
+    curBig=r.big;
+    curMid=r.mid;
+
+    mid.orders+=r.orders; mid.qty+=r.qty; mid.rev+=r.rev;
+    big.orders+=r.orders; big.qty+=r.qty; big.rev+=r.rev;
+
+    out+=tr([r.big,r.mid,r.small,fmtNum(r.orders),(totalOrders?r.orders/totalOrders*100:0).toFixed(1)+'%',fmtNum(r.qty),fmtMoney(r.rev),(totalRev?r.rev/totalRev*100:0).toFixed(1)+'%',fmtMoney(r.aovOrder),fmtMoney(r.aovQty)]);
+  });
+
+  out+=midSubtotal();
+  out+=bigSubtotal();
+
+  out+=`<tr style="background:#202124;color:#fff;font-weight:900;">
+    <th>Total</th><th></th><th></th>
+    <th>${fmtNum(totalOrders)}</th>
+    <th>100.0%</th>
+    <th>${fmtNum(totalQty)}</th>
+    <th>${fmtMoney(totalRev)}</th>
+    <th>100.0%</th>
+    <th>${fmtMoney(totalOrders?totalRev/totalOrders:0)}</th>
+    <th>${fmtMoney(totalQty?totalRev/totalQty:0)}</th>
+  </tr>`;
+
+  document.getElementById('categoryAnalysisTable').innerHTML=out;
+}
+
+function renderCustomer(sales){const candidates=['구매자명','구매자ID','구매자 아이디','수취인명','수령인','주문자명'];const keyCol=candidates.find(c=>sales.lineRows.some(r=>String(r[c]||'').trim()));if(!keyCol){table('customerTable',['안내'],[['MASTER에 구매자명/구매자ID/수취인명 계열 컬럼이 있으면 충성고객 분석을 표시할 수 있습니다.']]);return;}const by={};sales.lineRows.forEach(r=>{const k=String(r[keyCol]||'').trim();if(!k)return;if(!by[k])by[k]={name:k,orders:new Set(),rev:0,last:''};by[k].orders.add(String(r['주문번호']||r['상품주문번호']||''));by[k].rev+=r.amt;if(!by[k].last||r.ds>by[k].last)by[k].last=r.ds;});const rows=Object.values(by).sort((a,b)=>b.orders.size-a.orders.size||b.rev-a.rev).slice(0,30);table('customerTable',['고객','주문횟수','총구매금액','최근구매일','분류'],rows.map(r=>[r.name,r.orders.size,money(r.rev),r.last,r.orders.size>=2?'충성고객 후보':'일회성/대량 후보']));}
+function table(id,heads,rows){const el=document.getElementById(id);el.innerHTML='<thead><tr>'+heads.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('')+'</tbody>';}
+function draw(id,type,labels,datasets,legend=false,extraOptions={}){
+  if(charts[id])charts[id].destroy();
+  const canvas=document.getElementById(id);
+  if(!canvas)return;
+
+  const plugins=[];
+  if(extraOptions.datalabels && window.ChartDataLabels) plugins.push(ChartDataLabels);
+
+  const opts={
+    responsive:true,
+    maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:legend,position:'bottom',labels:{boxWidth:26}},
+      tooltip:{enabled:true},
+      datalabels:extraOptions.datalabels||{display:false}
+    },
+    scales:{
+      x:{ticks:{
+        font:{size:10},
+        autoSkip:!extraOptions.xLabelFull,
+        maxTicksLimit:extraOptions.xLabelFull?99:12,
+        maxRotation:extraOptions.xLabelFull?60:50,
+        minRotation:extraOptions.xLabelFull?45:0
+      }},
+      y:{
+        beginAtZero:true,
+        position:'left',
+        title:{display:!!extraOptions.yTitle,text:extraOptions.yTitle||''},
+        ticks:{font:{size:10}}
+      }
+    }
+  };
+
+  if((datasets||[]).some(d=>d.yAxisID==='y1')){
+    opts.scales.y1={
+      beginAtZero:true,
+      position:'right',
+      title:{display:!!extraOptions.y1Title,text:extraOptions.y1Title||''},
+      grid:{drawOnChartArea:false},
+      ticks:{font:{size:10}}
+    };
+  }
+
+  charts[id]=new Chart(canvas.getContext('2d'),{type,data:{labels,datasets},plugins,options:opts});
+}
+
+function switchTab(name,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById(name).classList.add('active');}
+loadData();
+</script>
+</body>
+</html>
