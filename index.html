@@ -98,9 +98,115 @@ table{width:100%;border-collapse:collapse;font-size:12px;} th,td{padding:9px 8px
 .diff-down{color:#1a73e8;font-weight:900;}
 .diff-flat{color:#5f6368;font-weight:800;}
 
+
+
+/* mobile optimization + simple login */
+.login-screen{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:22px;
+  background:linear-gradient(135deg,#f6f8fb,#e8f0fe);
+}
+.login-box{
+  width:100%;
+  max-width:380px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:24px;
+  box-shadow:0 10px 30px rgba(32,33,36,.16);
+}
+.login-box h2{font-size:21px;font-weight:900;margin-bottom:6px;color:var(--ink);}
+.login-box .login-desc{font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:16px;}
+.login-box input{
+  width:100%;
+  padding:14px 13px;
+  border:1px solid #dadce0;
+  border-radius:12px;
+  font-size:16px;
+  margin-bottom:10px;
+  outline:none;
+}
+.login-box input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,115,232,.12);}
+.login-box button{
+  width:100%;
+  padding:14px;
+  background:var(--blue);
+  color:white;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  font-size:15px;
+  font-weight:900;
+}
+.login-box button:hover{filter:brightness(.96);}
+#loginMsg{min-height:18px;margin-top:10px;font-size:12px;color:var(--red);font-weight:700;}
+body.locked{overflow:hidden;}
+body.locked .header,body.locked .container{filter:blur(2px);pointer-events:none;user-select:none;}
+
+@media(max-width:680px){
+  body{font-size:13px;}
+  .header{padding:14px 14px;}
+  .header-inner{display:block;}
+  .header h1{font-size:18px;letter-spacing:-.2px;}
+  .header p{font-size:11px;line-height:1.45;}
+  .container{padding:10px;}
+  .filter-box{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;border-radius:12px;align-items:stretch;}
+  .fi{min-width:0;}
+  .fi input,.fi select{width:100%;min-width:0;font-size:14px;padding:11px 10px;}
+  .btn{width:100%;padding:12px 10px;font-size:14px;}
+  .status{font-size:15px;margin:0 0 12px 1px;line-height:1.4;}
+  .tabs{gap:4px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;margin-bottom:12px;padding-bottom:1px;}
+  .tab{font-size:12px;padding:11px 12px;flex:0 0 auto;}
+  .metrics{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .metric{padding:12px;min-height:92px;border-radius:12px;}
+  .metric-label{font-size:11px;}
+  .metric-value{font-size:20px;}
+  .metric-sub{font-size:10.5px;}
+  .row2,.row3,.insights,.dow-hour-grid{grid-template-columns:1fr;gap:12px;}
+  .chart-box,.table-box,.insight-box{padding:13px;border-radius:12px;overflow-x:auto;}
+  .chart{height:280px;min-width:0;}
+  .chart.sm{height:240px;}
+  .chart.lg{height:320px;}
+  .competitor-chart-tall{height:360px;}
+  .group-chart{height:300px;}
+  .chart-title{font-size:13px;line-height:1.35;}
+  .box-head{align-items:flex-start;flex-direction:column;gap:4px;}
+  .hint{font-size:10.5px;line-height:1.4;}
+  table{font-size:11px;}
+  th,td{padding:7px 6px;}
+  .wide-table-wrap,.comp-fit-table{overflow-x:auto;}
+  .comp-fit-table table{min-width:760px;font-size:10.5px;}
+  .comp-checks{gap:6px;}
+  .comp-checks label{font-size:11px;padding:7px 9px;}
+  .login-box{padding:22px;border-radius:18px;}
+}
+
+@media(max-width:420px){
+  .filter-box{grid-template-columns:1fr;}
+  .metrics{grid-template-columns:1fr;}
+  .chart{height:260px;}
+  .chart.lg{height:300px;}
+}
+
 </style>
 </head>
-<body>
+<body class="locked">
+
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <h2>대시보드 로그인</h2>
+    <div class="login-desc">공유받은 비밀번호를 입력하면 대시보드를 조회할 수 있습니다.</div>
+    <input type="password" id="dashPw" placeholder="비밀번호 입력" autocomplete="current-password">
+    <button type="button" onclick="checkPassword()">접속</button>
+    <p id="loginMsg"></p>
+  </div>
+</div>
+
 <div class="header"><div class="header-inner"><div><h1>네이버 자석 쇼핑몰 통합 대시보드</h1><p>종합현황 · 방문추이 · 방문/주문현황 · 월별추이 · 상품성과 · 고객현황</p></div><div class="hint" id="headerRange">-</div></div></div>
 <div class="container">
   <div class="filter-box">
@@ -1312,7 +1418,49 @@ function draw(id,type,labels,datasets,legend=false,extraOptions={}){
 }
 
 function switchTab(name,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById(name).classList.add('active');}
-loadData();
+
+
+// ===== Simple password gate =====
+// GitHub Pages 정적 HTML용 간단 잠금입니다. 강한 보안이 필요한 경우 Cloudflare Access/Netlify Password 등을 사용하세요.
+const DASHBOARD_PASSWORD = '1234';
+
+function unlockDashboard(){
+  const login=document.getElementById('loginScreen');
+  if(login) login.style.display='none';
+  document.body.classList.remove('locked');
+  if(!rawVisit.length && !rawSales.length){
+    loadData();
+  }
+}
+
+function checkPassword(){
+  const input=document.getElementById('dashPw');
+  const msg=document.getElementById('loginMsg');
+  if(!input)return;
+  if(String(input.value)===DASHBOARD_PASSWORD){
+    sessionStorage.setItem('dashboard_login','ok');
+    unlockDashboard();
+  }else{
+    if(msg) msg.textContent='비밀번호가 맞지 않습니다.';
+    input.value='';
+    input.focus();
+  }
+}
+
+function initLogin(){
+  const input=document.getElementById('dashPw');
+  if(input){
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Enter') checkPassword();
+    });
+    setTimeout(()=>input.focus(),100);
+  }
+  if(sessionStorage.getItem('dashboard_login')==='ok'){
+    unlockDashboard();
+  }
+}
+
+initLogin();
 </script>
 </body>
 </html>
